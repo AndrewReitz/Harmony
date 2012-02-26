@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
 <!--/*
 * This file is part of Harmony a C# HTML5 Streaming media server
 *
@@ -15,9 +17,8 @@
 *
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>
-*/-->
+*/ -->
 
-<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Product Id="48fbed81-4644-4c69-8e13-d878b2930795" Name="HarmonyInstaller" Language="1033" Version="1.0.0.0" Manufacturer="HarmonyInstaller" UpgradeCode="5f7dcdfb-4d0d-4a59-9328-9d671f4f0d5d">
 		<Package InstallerVersion="200" Compressed="yes" />
