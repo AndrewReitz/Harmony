@@ -32,6 +32,10 @@ namespace HTML5MusicServer
             _audioPlayer_HTML = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "audio_player.html"));
         }
 
+        /// <summary>
+        /// Starts the webserver
+        /// Can Throw HttpListenerException
+        /// </summary>
         public void Start()
         {
             _listener.Start();
@@ -40,20 +44,54 @@ namespace HTML5MusicServer
             t.Start();
         }
 
+        /// <summary>
+        /// Run's the webserver, this is called by the start method
+        /// Can Throw HttpListenerException
+        /// </summary>
         private void Run()
         {
-            while (_listener.IsListening)
+            while (true)
             {
-                HttpListenerContext request = _listener.GetContext();
-                ThreadPool.QueueUserWorkItem(ProcessRequest, request);
+                try
+                {
+                    HttpListenerContext request = _listener.GetContext();
+                    ThreadPool.QueueUserWorkItem(ProcessRequest, request);
+                }
+                catch (HttpListenerException e)
+                {
+                    //error code 995 is the server was shutdown while in a request
+                    if (e.ErrorCode != 995)
+                    {
+                        throw e;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    //breaks out of the loop if stop was called
+                    //there has to be a better way to handle this but
+                    //i have yet to find one
+                    break;
+                }
             }
         }
 
+        /// <summary>
+        /// Stops the server from listening
+        /// </summary>
         public void Stop()
         {
             _listener.Stop();
         }
 
+        /// <summary>
+        /// Check if the server is running or not
+        /// </summary>
+        /// <returns>True: server is running
+        /// False: server is not running</returns>
         public bool IsListening()
         {
             return _listener.IsListening;
@@ -169,7 +207,7 @@ namespace HTML5MusicServer
                     case ".m4a":
                         json_music.Append(getMusic(file));
                         break;
-                    case ".flac": //don't this this type is supported by jplayer
+                    case ".flac": //don't think this type is supported by jplayer
                         json_music.Append(getMusic(file));
                         break;
                     case ".mp4":

@@ -1,4 +1,0 @@
-c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HarmonyInstaller\bin\Debug\HarmonyInstaller.msi
-c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HarmonyInstaller\bin\Debug\HarmonyInstaller.wixpdb
-obj\Debug\Product.wixobj
-obj\Debug\Product.Generated.wixobj

@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Forms;
 using HTML5MusicServer;
+using System.IO;
 
 namespace Harmony
 {
@@ -62,8 +63,19 @@ namespace Harmony
             }
             else
             {
+                errorMsg = "";
+                if (Directory.Exists(musicDir))
+                {
+                    errorMsg = "Invalid Music Directory\n";
+                }
+
                 int portNum;
                 if (Int32.TryParse(port, out portNum))
+                {
+                    errorMsg += "Invalid Port Number";
+                }
+
+                if (!string.IsNullOrEmpty(errorMsg))
                 {
                     //check if null for first run
                     if (_server == null || !_server.IsListening())
@@ -74,7 +86,7 @@ namespace Harmony
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show("Invalid Port Number", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show(errorMsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
