@@ -1,0 +1,13 @@
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\audio_player.html
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\js\Jplayer.swf
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\js\jquery.jplayer.min.js
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\skin\jplayer.blue.monday.css
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\skin\jplayer.blue.monday.jpg
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\skin\jplayer.blue.monday.video.play.hover.png
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\skin\jplayer.blue.monday.video.play.png
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\skin\pbar-ani.gif
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\HTML5MusicServer.dll
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\bin\Debug\HTML5MusicServer.pdb
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\obj\Debug\HTML5MusicServer.csprojResolveAssemblyReference.cache
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\obj\Debug\HTML5MusicServer.dll
+c:\Users\andrew\Documents\Visual Studio 2010\Projects\Harmony\HTML5MusicServer\obj\Debug\HTML5MusicServer.pdb
