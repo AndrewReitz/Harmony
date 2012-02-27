@@ -22,6 +22,8 @@ using System.Windows;
 using System.Windows.Forms;
 using HTML5MusicServer;
 using System.IO;
+using System.Security.Principal;
+using System.Text;
 
 namespace Harmony
 {
@@ -63,38 +65,43 @@ namespace Harmony
 
         private void buttonStart_Click(object sender, RoutedEventArgs e)
         {
-            string errorMsg = "";
+            StringBuilder errorMsg = new StringBuilder();
             string musicDir = this.textBlockBrowseContent.Text;
             string port = this.textBoxPort.Text;
 
+            //check if running in admin mode, this should be moved to when the application is started
+            if (new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
+            {
+                errorMsg.Append("Sorry but this program needs to be run in administrator mode\n");
+            }
             if (string.IsNullOrEmpty(musicDir))
             {
-                errorMsg = "You are missing a music directory\n";
+                errorMsg.Append("You are missing a music directory\n");
             }
             if (string.IsNullOrEmpty(port))
             {
-                errorMsg += "You are missing a port number";
+                errorMsg.Append("You are missing a port number");
             }
 
-            if (!string.IsNullOrEmpty(errorMsg))
+            if (!string.IsNullOrEmpty(errorMsg.ToString()))
             {
-                System.Windows.MessageBox.Show(errorMsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(errorMsg.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
-                errorMsg = "";
+                errorMsg = new StringBuilder();
                 if (Directory.Exists(musicDir))
                 {
-                    errorMsg = "Invalid Music Directory\n";
+                    errorMsg.Append("Invalid Music Directory\n");
                 }
 
                 int portNum;
                 if (Int32.TryParse(port, out portNum))
                 {
-                    errorMsg += "Invalid Port Number";
+                    errorMsg.Append("Invalid Port Number");
                 }
 
-                if (!string.IsNullOrEmpty(errorMsg))
+                if (!string.IsNullOrEmpty(errorMsg.ToString()))
                 {
                     //check if null for first run
                     if (_server == null || !_server.IsListening())
@@ -105,7 +112,7 @@ namespace Harmony
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(errorMsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show(errorMsg.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
