@@ -37,6 +37,8 @@ namespace Harmony
         public MainWindow()
         {
             InitializeComponent();
+
+            Load();
         }
 
         private void button1_Click(object sender, RoutedEventArgs e)
@@ -47,9 +49,9 @@ namespace Harmony
                 dialog.ShowNewFolderButton = false;
                 dialog.RootFolder = Environment.SpecialFolder.MyComputer;
 
-                if (!string.IsNullOrEmpty(this.textBlockBrowseContent.Text))
+                if (!string.IsNullOrEmpty(this.textBoxBrowseContent.Text))
                 {
-                    dialog.SelectedPath = this.textBlockBrowseContent.Text;
+                    dialog.SelectedPath = this.textBoxBrowseContent.Text;
                 }
                 else
                 {
@@ -58,7 +60,7 @@ namespace Harmony
 
                 if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    this.textBlockBrowseContent.Text = dialog.SelectedPath;
+                    this.textBoxBrowseContent.Text = dialog.SelectedPath;
                 }
             }
         }
@@ -66,14 +68,14 @@ namespace Harmony
         private void buttonStart_Click(object sender, RoutedEventArgs e)
         {
             StringBuilder errorMsg = new StringBuilder();
-            string musicDir = this.textBlockBrowseContent.Text;
+            string musicDir = this.textBoxBrowseContent.Text;
             string port = this.textBoxPort.Text;
 
             //check if running in admin mode, this should be moved to when the application is started
-            if (new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
-            {
-                errorMsg.Append("Sorry but this program needs to be run in administrator mode\n");
-            }
+            //if (new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
+            //{
+            //    errorMsg.Append("Sorry but this program needs to be run in administrator mode\n");
+            //}
             if (string.IsNullOrEmpty(musicDir))
             {
                 errorMsg.Append("You are missing a music directory\n");
@@ -123,6 +125,24 @@ namespace Harmony
             {
                 _server.Stop();
             }
+        }
+
+        private void Load()
+        {
+            this.textBoxBrowseContent.Text = Properties.Settings.Default.musicPath;
+            this.textBoxPort.Text = Properties.Settings.Default.port;
+        }
+
+        private void Save()
+        {
+            Properties.Settings.Default.musicPath = this.textBoxBrowseContent.Text;
+            Properties.Settings.Default.port = this.textBoxPort.Text;
+            Properties.Settings.Default.Save();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Save();
         }
     }
 }

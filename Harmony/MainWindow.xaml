@@ -20,7 +20,8 @@
 <Window x:Class="Harmony.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Harmony" Height="125" Width="482">
+        Title="Harmony" Height="125" Width="482"
+        Closing="Window_Closing">
     <Grid Height="78" Width="458">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"></ColumnDefinition>
@@ -33,7 +34,7 @@
         <Button Content="Start" Name="buttonStart" Grid.Column="1" Height="23" HorizontalAlignment="Left" Margin="67,41,0,0" VerticalAlignment="Top" Width="75" Grid.RowSpan="2" Click="buttonStart_Click" />
         <Button Content="Stop" Name="buttonStop" Height="23" HorizontalAlignment="Left" Margin="294,41,0,0" VerticalAlignment="Top" Width="75" Grid.ColumnSpan="2" Grid.RowSpan="2" Click="buttonStop_Click" />
         <Button Content="Browse" Grid.Column="1" Height="23" HorizontalAlignment="Left" Margin="67,12,0,0" Name="button1" VerticalAlignment="Top" Width="75" Click="button1_Click" />
-        <TextBox Name="textBlockBrowseContent" Height="23" HorizontalAlignment="Left" Margin="88,12,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="281" />
+        <TextBox Name="textBoxBrowseContent" Height="23" HorizontalAlignment="Left" Margin="88,12,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="281" />
         <TextBox Height="23" HorizontalAlignment="Right" Margin="0,2,98,0" Name="textBoxPort" VerticalAlignment="Top" Width="120" Grid.Row="1" />
         <TextBlock Height="23" HorizontalAlignment="Left" Margin="12,12,0,0" Name="textBlock1" Text="Music Folder:" VerticalAlignment="Top" />
         <TextBlock Height="23" HorizontalAlignment="Left" Margin="12,41,0,0" Name="textBlock2" Text="Port:" VerticalAlignment="Top" Grid.RowSpan="2" />
