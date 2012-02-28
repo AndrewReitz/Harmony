@@ -212,6 +212,8 @@ namespace HTML5MusicServer
         /// <returns>byte array of the generated webpage</returns>
         byte[] GetWebPage(string directory)
         {
+            bool isMusic = false;
+
             //getting all the music and creating it in jason format to
             //to put into the file
             StringBuilder json_music = new StringBuilder();
@@ -222,21 +224,27 @@ namespace HTML5MusicServer
                     //trying any and all, will put them in as type mp3...
                     case ".mp3":
                         json_music.Append(getMusic(file));
+                        isMusic = true;
                         break;
                     case ".m4a":
                         json_music.Append(getMusic(file));
+                        isMusic = true;
                         break;
                     case ".flac": //don't think this type is supported by jplayer
                         json_music.Append(getMusic(file));
+                        isMusic = true;
                         break;
                     case ".mp4":
                         json_music.Append(getMusic(file));
+                        isMusic = true;
                         break;
                     case ".ogg":
                         json_music.Append(getMusic(file));
+                        isMusic = true;
                         break;
                     case ".wav":
                         json_music.Append(getMusic(file));
+                        isMusic = true;
                         break;
                 }
             }
@@ -248,12 +256,21 @@ namespace HTML5MusicServer
                 directories.Append(
                     "<a href=\"" +
                     dir.Replace(_musicDirectory, "").Replace("\\", "/") +
-                    "\">" + dir.Replace(_musicDirectory, "").Replace("\\", "/") + "</a><br>"
+                    "\">" + dir.Substring(dir.LastIndexOf("\\") + 1) + "</a><br>"
                     );
             }
 
-            string returnString = _audioPlayer_HTML.Replace("##Audio_Here##", json_music.ToString());
-            returnString = returnString.Replace("#Directories_Here#", directories.ToString());
+            string returnString = "";
+            if (isMusic)
+            {
+                returnString = _audioPlayer_HTML.Replace("##Audio_Here##", json_music.ToString());
+                returnString = returnString.Replace("#Directories_Here#", directories.ToString());
+            }
+            else
+            {
+                returnString = "<!DOCTYPE html><head><title>HTML5 WebPlayer</title><meta http-equiv=\"Content-Type\"" +
+                    "content=\"text/html; charset=iso-8859-1\" /></head><body>" + directories.ToString() + "</body></html>";
+            }
 
 
             return Encoding.UTF8.GetBytes(returnString);
