@@ -93,6 +93,7 @@ namespace HTML5MusicServer
                     //breaks out of the loop if stop was called
                     //there has to be a better way to handle this but
                     //i have yet to find one
+                    //that's okay because this will be getting replaced soon anyways
                     break;
                 }
             }
@@ -122,6 +123,16 @@ namespace HTML5MusicServer
 
             //string msg = context.Request.HttpMethod + " " + context.Request.Url;
             //Console.WriteLine(msg);
+
+            if (context.Request.Headers.GetValues("If-None-Match") != null)
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.NotModified;
+                context.Response.KeepAlive = true;
+                context.Response.ProtocolVersion = HttpVersion.Version11;
+                context.Response.AddHeader("Connection", "Keep-Alive");
+                context.Response.AddHeader("Keep-Alive", "timeout=15, max=100");
+                return;
+            }
 
             context.Response.StatusCode = (int)HttpStatusCode.OK;
             context.Response.SendChunked = true;
@@ -158,7 +169,7 @@ namespace HTML5MusicServer
                             default: b = NotFound(context); break;
                         }
 
-                        context.Response.AddHeader("ETag", GetMD5(b));
+                        context.Response.AddHeader("ETag", GetMD5(b).Replace("-", ""));
                         context.Response.AddHeader("Last-Modified", GetLastModifiedDate(filePath));
                     }
                     else if (Directory.Exists(filePath))
@@ -184,10 +195,11 @@ namespace HTML5MusicServer
                 Int32.TryParse(temp[1], out rangeEnd);
                 if (rangeEnd == 0)
                 {
+                    context.Response.StatusCode = (int)HttpStatusCode.PartialContent;
                     rangeEnd = b.Length;
                 }
 
-                context.Response.AddHeader("Content-Range", rangeBegin + "-" + (rangeEnd - rangeBegin) + "/" + rangeEnd);
+                context.Response.AddHeader("Content-Range", rangeBegin + "-" + (rangeEnd - rangeBegin) + "/" + rangeEnd+1);
             }
 
             context.Response.ContentLength64 = b.Length;
