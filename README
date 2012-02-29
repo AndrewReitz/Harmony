@@ -1,0 +1,17 @@
+Harmony: an Streaming HTML5 Music Server
+
+Choose a port and pick a folder full of music and have access to it from any device with
+an up to date web browser!
+
+Harmony uses jPlayer, check it out here https://github.com/happyworm/jPlayer and jPlayer.org
+
+Soon to come
+------------
+*Installer
+*Add Username and Password support
+*Update to make runable on Linux systems under Mono
+*Remove HttpListener and thus removing the need to run as Admin
+*Play List
+*Video Support?
+
+Author: Andrew Reitz
