@@ -35,9 +35,11 @@ namespace HTML5MusicServer
         string _musicDirectory;
         string _javaScriptDir;
         string _skins;
-
-        //it was just easier to do it this way instead of using XElement
+        string _login = "<html><body><form action=\"login\" method=\"post\">Username: <input type=\"text\" name=\"user\" /><br />Password: <input type=\"password\" name=\"password\" /><input type=\"submit\" /></form></body></html>";
         string _audioPlayer_HTML;
+        string _userName = "test";
+        string _password = "test";
+        string _userHash = "{E3C2D6B8-33B0-4C53-88AF-1A51261C59F7}";
 
         public WebServer(string MusicDirectory, int port)
         {
@@ -46,7 +48,7 @@ namespace HTML5MusicServer
             _listener = new HttpListener();
             _listener.Prefixes.Add("http://*:" + port + "/");
             _musicDirectory = MusicDirectory;
-            _javaScriptDir = Path.Combine(Directory.GetCurrentDirectory(), "js");
+            _javaScriptDir = Path.Combine(Directory.GetCurrentDirectory(), "js"); //GetCurrentDirectory needs to be changed
             _skins = Path.Combine(Directory.GetCurrentDirectory(), "skin");
             _audioPlayer_HTML = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "audio_player.html"));
         }
@@ -121,32 +123,64 @@ namespace HTML5MusicServer
         {
             HttpListenerContext context = (HttpListenerContext)listenerContext;
 
-            //string msg = context.Request.HttpMethod + " " + context.Request.Url;
-            //Console.WriteLine(msg);
-
-            if (context.Request.Headers.GetValues("If-None-Match") != null)
-            {
-                context.Response.StatusCode = (int)HttpStatusCode.NotModified;
-                context.Response.KeepAlive = true;
-                context.Response.ProtocolVersion = HttpVersion.Version11;
-                context.Response.AddHeader("Connection", "Keep-Alive");
-                context.Response.AddHeader("Keep-Alive", "timeout=15, max=100");
-                return;
-            }
-
             context.Response.StatusCode = (int)HttpStatusCode.OK;
             context.Response.SendChunked = true;
             context.Response.KeepAlive = true;
             context.Response.ProtocolVersion = HttpVersion.Version11;
-            context.Response.AddHeader("Connection", "Keep-Alive");
-            context.Response.AddHeader("Keep-Alive", "timeout=15, max=100");
+            //context.Response.AddHeader("Connection", "Keep-Alive");
+            //context.Response.AddHeader("Keep-Alive", "timeout=15, max=100");
             //context.Response.Headers.Add("Content-Encoding: gzip");
 
             byte[] b = null;
-            switch (context.Request.RawUrl)
+
+            if (context.Request.HttpMethod == "POST")
             {
-                case "/": b = GetWebPage(_musicDirectory); break;
-                default:
+                string post_string = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding).ReadToEnd();
+                string[] split_post_string = post_string.Split('&');
+                Dictionary<string, string> post_values = new Dictionary<string, string>();
+                for (int i = 0; i < split_post_string.Length; i++)
+                {
+                    string[] values = split_post_string[i].Split('=');
+                    if (values.Length == 2)
+                    {
+                        post_values.Add(values[0], values[1]);
+                    }
+                }
+
+                for (int i = 0; i < post_values.Count; i++)
+                {
+                    if (post_values.ContainsKey("user") && post_values.ContainsKey("password"))
+                    {
+                        if (post_values["user"] == _userName && post_values["password"] == _password)
+                        {
+                            Cookie c = new Cookie("ua", _userHash);
+                            context.Response.Cookies.Add(c);
+                            b = GetWebPage(_musicDirectory);
+                        }
+                        else
+                        {
+                            b = Encoding.UTF8.GetBytes(_login);
+                        }
+                    }
+                    else
+                    {
+                        b = Encoding.UTF8.GetBytes(_login);
+                    }
+                }
+            }
+            else if (context.Request.Cookies["ua"] == null || context.Request.Cookies["ua"].Value != _userHash)
+            {
+                b = Encoding.UTF8.GetBytes(_login);
+            }
+            else
+            {
+                if (context.Request.RawUrl == "/")
+                {
+                    //check for authentication
+                    b = GetWebPage(_musicDirectory);
+                }
+                else
+                {
                     string filePath = Path.Combine(_musicDirectory, Uri.UnescapeDataString(context.Request.RawUrl.Replace("/", "\\").Remove(0, 1)));
                     if (context.Request.RawUrl.Contains("/skin/"))
                     {
@@ -180,9 +214,8 @@ namespace HTML5MusicServer
                     {
                         b = NotFound(context);
                     }
-                    break;
+                }
             }
-
 
             int rangeBegin = 0;
             int rangeEnd = b.Length;
@@ -199,7 +232,7 @@ namespace HTML5MusicServer
                     rangeEnd = b.Length;
                 }
 
-                context.Response.AddHeader("Content-Range", rangeBegin + "-" + (rangeEnd - rangeBegin) + "/" + rangeEnd+1);
+                context.Response.AddHeader("Content-Range", rangeBegin + "-" + (rangeEnd - rangeBegin) + "/" + rangeEnd + 1);
             }
 
             context.Response.ContentLength64 = b.Length;
@@ -207,7 +240,6 @@ namespace HTML5MusicServer
             try
             {
                 //add in gzip when this is running smoothly
-
                 context.Response.OutputStream.Write(b, 0, b.Length);
                 context.Response.OutputStream.Close();
             }
