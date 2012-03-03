@@ -35,7 +35,7 @@ namespace HTML5MusicServer
         string _musicDirectory;
         string _javaScriptDir;
         string _skins;
-        string _login = "<html><body><form action=\"login\" method=\"post\">Username: <input type=\"text\" name=\"user\" /><br />Password: <input type=\"password\" name=\"password\" /><input type=\"submit\" /></form></body></html>";
+        string _login = "<html><body><form method=\"post\">Username: <input type=\"text\" name=\"user\" /><br />Password: <input type=\"password\" name=\"password\" /><input type=\"submit\" /></form></body></html>";
         string _audioPlayer_HTML;
         string _userName = "test";
         string _password = "test";

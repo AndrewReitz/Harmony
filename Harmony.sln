@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HTML5MusicServer", "HTML5MusicServer\HTML5MusicServer.csproj", "{E9E7CFE5-E19F-4A52-B53F-6100F16BC56E}"
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "HarmonyInstaller", "HarmonyInstaller\HarmonyInstaller.wixproj", "{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Harmony", "Harmony\Harmony.csproj", "{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}"
 EndProject
 Global
@@ -27,16 +25,6 @@ Global
 		{E9E7CFE5-E19F-4A52-B53F-6100F16BC56E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{E9E7CFE5-E19F-4A52-B53F-6100F16BC56E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{E9E7CFE5-E19F-4A52-B53F-6100F16BC56E}.Release|x86.ActiveCfg = Release|Any CPU
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Debug|x86.ActiveCfg = Debug|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Debug|x86.Build.0 = Debug|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Release|Any CPU.ActiveCfg = Release|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Release|Mixed Platforms.Build.0 = Release|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Release|x86.ActiveCfg = Release|x86
-		{E8F850CA-BC30-4629-BB7D-EBC911C5EDFB}.Release|x86.Build.0 = Release|x86
 		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
 		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Debug|Mixed Platforms.Build.0 = Debug|x86
