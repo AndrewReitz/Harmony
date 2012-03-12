@@ -19,86 +19,60 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net;
-using System.Threading;
 using System.IO;
-using System.Xml.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
+using System.Xml.Linq;
 
 namespace HTML5MusicServer
 {
     public class WebServer
     {
-        HttpListener _listener;
+        TcpListener _listener;
+        const string _executingDirectory = Assembly.GetAssembly(typeof(WebServer)).Location;
         string _musicDirectory;
         string _javaScriptDir;
         string _skins;
-        string _login = "<html><body><form method=\"post\">Username: <input type=\"text\" name=\"user\" /><br />Password: <input type=\"password\" name=\"password\" /><input type=\"submit\" /></form></body></html>";
+        string _login_HTML;
         string _audioPlayer_HTML;
-        string _userName = "test";
-        string _password = "test";
-        string _userHash = "{E3C2D6B8-33B0-4C53-88AF-1A51261C59F7}";
+        string _username;
+        string _password;        
+        string _userHash = "E3C2D6B8-33B0-4C53-88AF-1A51261C59F7";
 
-        public WebServer(string MusicDirectory, int port)
+        /// <summary>
+        /// Gets a value that indicates if the WebServer is running
+        /// </summary>
+        public bool IsListening
         {
-            ThreadPool.SetMinThreads(50, 50);
-            ThreadPool.SetMaxThreads(500, 1000);
-            _listener = new HttpListener();
-            _listener.Prefixes.Add("http://*:" + port + "/");
+            get { return _isListening; }
+        }
+        private volatile bool _isListening = false;
+
+        public WebServer(string MusicDirectory, int port, string username, string password)
+        {
+            _listener = new TcpListener(IPAddress.Any, port);
             _musicDirectory = MusicDirectory;
-            _javaScriptDir = Path.Combine(Directory.GetCurrentDirectory(), "js"); //GetCurrentDirectory needs to be changed
-            _skins = Path.Combine(Directory.GetCurrentDirectory(), "skin");
-            _audioPlayer_HTML = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "audio_player.html"));
+            _javaScriptDir = Path.Combine(_executingDirectory, "js"); //GetCurrentDirectory needs to be changed
+            _skins = Path.Combine(_executingDirectory, "skin");
+            _audioPlayer_HTML = File.ReadAllText(Path.Combine(_executingDirectory, "audio_player.html"));
+            _login_HTML = File.ReadAllText(Path.Combine(_executingDirectory, "login.html"));
+            _username = username;
+            _password = password;
         }
 
         /// <summary>
         /// Starts the webserver
-        /// Can Throw HttpListenerException
         /// </summary>
         public void Start()
         {
-            _listener.Start();
+            _isListening = true;
 
-            Thread t = new Thread(Run);
-            t.Start();
-        }
-
-        /// <summary>
-        /// Run's the webserver, this is called by the start method
-        /// Can Throw HttpListenerException
-        /// </summary>
-        private void Run()
-        {
-            while (true)
-            {
-                try
-                {
-                    HttpListenerContext request = _listener.GetContext();
-                    ThreadPool.QueueUserWorkItem(ProcessRequest, request);
-                }
-                catch (HttpListenerException e)
-                {
-                    //error code 995 is the server was shutdown while in a request
-                    if (e.ErrorCode != 995)
-                    {
-                        throw e;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                catch (InvalidOperationException)
-                {
-                    //breaks out of the loop if stop was called
-                    //there has to be a better way to handle this but
-                    //i have yet to find one
-                    //that's okay because this will be getting replaced soon anyways
-                    break;
-                }
-            }
+            Thread t = new Thread(new ParameterizedThreadStart(RunServer));
+            t.Start(_listener);
         }
 
         /// <summary>
@@ -106,17 +80,49 @@ namespace HTML5MusicServer
         /// </summary>
         public void Stop()
         {
-            _listener.Stop();
+            _isListening = false;
         }
 
-        /// <summary>
-        /// Check if the server is running or not
-        /// </summary>
-        /// <returns>True: server is running
-        /// False: server is not running</returns>
-        public bool IsListening()
+        private void RunServer(object tcpListner)
         {
-            return _listener.IsListening;
+            TcpListener listener = (TcpListener)tcpListner;
+            listener.Start();
+
+            while (this._isListening)
+            {
+                listener.BeginAcceptTcpClient(new AsyncCallback(HandleRequest), listener);
+            }
+
+            listener.Stop();
+        }
+
+        private void HandleRequest(IAsyncResult ar)
+        {
+            TcpListener listener = (TcpListener)ar.AsyncState;
+            TcpClient client = listener.EndAcceptTcpClient(ar);
+
+            byte[] rBuffer = new byte[4096];
+            Stream clientStream = client.GetStream();
+            int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
+
+            string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
+            Request request = new Request(recieved);
+
+            StringBuilder responseBuilder;
+            if (request.HttpMethod == Request.GET)
+            {
+                Console.WriteLine("GET REQUEST RECIEVE");
+            }
+            else if (request.HttpMethod == Request.POST)
+            {
+                Console.WriteLine("POST RECIEVE");
+            }
+
+            byte[] sBuffer = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n\r\n<html><body><p>TEST</p><form action=\"welcome.php\" method=\"post\">Name: <input type=\"text\" name=\"fname\" />Age: <input type=\"text\" name=\"age\" /><input type=\"submit\" /></form></body></html>\r\n");
+
+            clientStream.Write(sBuffer, 0, sBuffer.Length);
+            clientStream.Close();
+            client.Close();
         }
 
         void ProcessRequest(object listenerContext)
@@ -151,7 +157,7 @@ namespace HTML5MusicServer
                 {
                     if (post_values.ContainsKey("user") && post_values.ContainsKey("password"))
                     {
-                        if (post_values["user"] == _userName && post_values["password"] == _password)
+                        if (post_values["user"] == _username && post_values["password"] == _password)
                         {
                             Cookie c = new Cookie("ua", _userHash);
                             context.Response.Cookies.Add(c);
@@ -159,18 +165,18 @@ namespace HTML5MusicServer
                         }
                         else
                         {
-                            b = Encoding.UTF8.GetBytes(_login);
+                            b = Encoding.UTF8.GetBytes(_login_HTML);
                         }
                     }
                     else
                     {
-                        b = Encoding.UTF8.GetBytes(_login);
+                        b = Encoding.UTF8.GetBytes(_login_HTML);
                     }
                 }
             }
             else if (context.Request.Cookies["ua"] == null || context.Request.Cookies["ua"].Value != _userHash)
             {
-                b = Encoding.UTF8.GetBytes(_login);
+                b = Encoding.UTF8.GetBytes(_login_HTML);
             }
             else
             {

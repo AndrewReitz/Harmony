@@ -24,6 +24,8 @@ using HTML5MusicServer;
 using System.IO;
 using System.Security.Principal;
 using System.Text;
+using System.Diagnostics;
+using System.Windows.Media.Imaging;
 
 namespace Harmony
 {
@@ -37,6 +39,21 @@ namespace Harmony
         public MainWindow()
         {
             InitializeComponent();
+
+            //check if vista or greater, if not appliction will not run correctly
+            //close application if that is the case
+            if (!(Environment.OSVersion.Version.Major >= 6))
+            {
+                System.Windows.MessageBox.Show("The operating system you are running this application on is not supported", 
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                this.Close();
+            }
+            else if (!IsElevated())
+            {
+                System.Windows.MessageBox.Show("Sorry, but in order for this application to run correctly it needs to be run as administrator",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
 
             Load();
         }
@@ -70,12 +87,7 @@ namespace Harmony
             StringBuilder errorMsg = new StringBuilder();
             string musicDir = this.textBoxBrowseContent.Text;
             string port = this.textBoxPort.Text;
-
-            //check if running in admin mode, this should be moved to when the application is started
-            //if (new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
-            //{
-            //    errorMsg.Append("Sorry but this program needs to be run in administrator mode\n");
-            //}
+            
             if (string.IsNullOrEmpty(musicDir))
             {
                 errorMsg.Append("You are missing a music directory\n");
@@ -143,6 +155,13 @@ namespace Harmony
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             Save();
+        }
+
+        private bool IsElevated()
+        {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
     }
 }
