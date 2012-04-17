@@ -17,12 +17,39 @@ namespace WebServerTesting
         public static const string STATUS_CODE_NOT_MODIFIED = "304 Not Modified";
         public static const string STATUS_COSE_NOT_PARTIAL_CONTENT = "206 Partial Content";
 
-        public string _ResponseStatus;
+        private string _ResponseStatus;
         public string ResponseStatus
         {
             set
             {
                 _ResponseStatus = HTTP_PROTOCAL + value;
+            }
+        }
+
+        private  string _ContentEncoding;
+        public string ContentEncoding
+        {
+            set
+            {
+                _ContentEncoding = "Content-Encoding: " + value;
+            }
+        }
+
+        private string _ContentType;
+        public string ContentType
+        {
+            set
+            {
+                _ContentType = "Content-Type: " + value;
+            }
+        }
+
+        private string _LastModified;
+        public string LastModified
+        {
+            set
+            {
+                _LastModified = "Last-Modified: " + string.Format("{0:R}", DateTime.Now);
             }
         }
     }
