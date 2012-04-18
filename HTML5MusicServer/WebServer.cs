@@ -110,6 +110,7 @@ namespace HTML5MusicServer
             Response response = new Response();
             byte[] cBuffer = null; //bytes of the files used later to deliver data to the client
 
+            //TODO Clean this up
             if (request.HttpMethod == Request.GET)
             {
                 string filePath;
@@ -118,6 +119,7 @@ namespace HTML5MusicServer
                     cBuffer = GetWebPage(_musicDirectory);
                 }
                 //add more else ifs if more file's are added
+                //TODO there is an easier/better way
                 else if (request.Url.Contains("/skin/"))
                 {
                     cBuffer = GetFileBytes(Path.Combine(_skins, Path.GetFileName(request.Url)));
@@ -237,7 +239,7 @@ namespace HTML5MusicServer
         {
             return "\t{\n\tname:\"" + Path.GetFileName(file) + "\",\n\tmp3:\"" + file.Replace(_musicDirectory, "").Replace("\\", "/") + "\"\n\t},";
         }
-        
+
         byte[] NotFound(Response response)
         {
             response.ResponseStatus = Response.STATUS_CODE_NOT_FOUND;
