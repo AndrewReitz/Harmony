@@ -33,15 +33,15 @@ namespace HTML5MusicServer
     public class WebServer
     {
         TcpListener _listener;
-        const string _executingDirectory = Assembly.GetAssembly(typeof(WebServer)).Location;
-        string _musicDirectory;
-        string _javaScriptDir;
-        string _skins;
-        string _login_HTML;
-        string _audioPlayer_HTML;
-        string _username;
-        string _password;        
-        string _userHash = "E3C2D6B8-33B0-4C53-88AF-1A51261C59F7";
+        readonly string _executingDirectory = Path.GetDirectoryName(Assembly.GetAssembly(typeof(WebServer)).Location);
+        readonly string _musicDirectory;
+        readonly string _javaScriptDir;
+        readonly string _skins;
+        readonly string _login_HTML;
+        readonly string _audioPlayer_HTML;
+        readonly string _username;
+        readonly string _password;
+        readonly string _userHash = "E3C2D6B8-33B0-4C53-88AF-1A51261C59F7";
 
         /// <summary>
         /// Gets a value that indicates if the WebServer is running
@@ -59,7 +59,7 @@ namespace HTML5MusicServer
             _javaScriptDir = Path.Combine(_executingDirectory, "js"); //GetCurrentDirectory needs to be changed
             _skins = Path.Combine(_executingDirectory, "skin");
             _audioPlayer_HTML = File.ReadAllText(Path.Combine(_executingDirectory, "audio_player.html"));
-            _login_HTML = File.ReadAllText(Path.Combine(_executingDirectory, "login.html"));
+            //_login_HTML = File.ReadAllText(Path.Combine(_executingDirectory, "login.html")); CURRENTLY NO LOGINPAGE
             _username = username;
             _password = password;
         }
@@ -107,152 +107,59 @@ namespace HTML5MusicServer
 
             string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
             Request request = new Request(recieved);
+            Response response = new Response();
+            byte[] cBuffer = null; //bytes of the files used later to deliver data to the client
 
-            StringBuilder responseBuilder;
             if (request.HttpMethod == Request.GET)
             {
-                Console.WriteLine("GET REQUEST RECIEVE");
+                string filePath;
+                if (request.Url == "/")
+                {
+                    cBuffer = GetWebPage(_musicDirectory);
+                }
+                //add more else ifs if more file's are added
+                else if (request.Url.Contains("/skin/"))
+                {
+                    cBuffer = GetFileBytes(Path.Combine(_skins, Path.GetFileName(request.Url)));
+                }
+                else if (request.Url.Contains("/js/"))
+                {
+                    cBuffer = GetFileBytes(Path.Combine(_javaScriptDir, Path.GetFileName(request.Url)));
+                }
+                //not the pretiest but only asign filePath when needed
+                else if (File.Exists(filePath = Path.Combine(_musicDirectory, Uri.UnescapeDataString(request.Url.Replace("/", "\\").Remove(0, 1)))))
+                {
+                    switch (Path.GetExtension(filePath))
+                    {
+                        case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath); break;
+                        case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath); break;
+                        case ".flac": response.ContentType = "audio/x-flac"; cBuffer = GetFileBytes(filePath); break; //try but doubt it will work
+                        case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath); break;
+                        case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath); break;
+                        case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath); break;
+                        default: cBuffer = NotFound(response); break;
+                    }
+                }
+                else if (Directory.Exists(filePath))
+                {
+                    cBuffer = GetWebPage(filePath);
+                }
+                else
+                {
+                    cBuffer = NotFound(response);
+                }
+
             }
             else if (request.HttpMethod == Request.POST)
             {
                 Console.WriteLine("POST RECIEVE");
             }
+            byte[] hBuffer = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n\r\n");
 
-            byte[] sBuffer = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n\r\n<html><body><p>TEST</p><form action=\"welcome.php\" method=\"post\">Name: <input type=\"text\" name=\"fname\" />Age: <input type=\"text\" name=\"age\" /><input type=\"submit\" /></form></body></html>\r\n");
-
-            clientStream.Write(sBuffer, 0, sBuffer.Length);
+            clientStream.Write(hBuffer, 0, hBuffer.Length);
+            clientStream.Write(cBuffer, 0, cBuffer.Length);
             clientStream.Close();
             client.Close();
-        }
-
-        void ProcessRequest(object listenerContext)
-        {
-            HttpListenerContext context = (HttpListenerContext)listenerContext;
-
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
-            context.Response.SendChunked = true;
-            context.Response.KeepAlive = true;
-            context.Response.ProtocolVersion = HttpVersion.Version11;
-            //context.Response.AddHeader("Connection", "Keep-Alive");
-            //context.Response.AddHeader("Keep-Alive", "timeout=15, max=100");
-            //context.Response.Headers.Add("Content-Encoding: gzip");
-
-            byte[] b = null;
-
-            if (context.Request.HttpMethod == "POST")
-            {
-                string post_string = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding).ReadToEnd();
-                string[] split_post_string = post_string.Split('&');
-                Dictionary<string, string> post_values = new Dictionary<string, string>();
-                for (int i = 0; i < split_post_string.Length; i++)
-                {
-                    string[] values = split_post_string[i].Split('=');
-                    if (values.Length == 2)
-                    {
-                        post_values.Add(values[0], values[1]);
-                    }
-                }
-
-                for (int i = 0; i < post_values.Count; i++)
-                {
-                    if (post_values.ContainsKey("user") && post_values.ContainsKey("password"))
-                    {
-                        if (post_values["user"] == _username && post_values["password"] == _password)
-                        {
-                            Cookie c = new Cookie("ua", _userHash);
-                            context.Response.Cookies.Add(c);
-                            b = GetWebPage(_musicDirectory);
-                        }
-                        else
-                        {
-                            b = Encoding.UTF8.GetBytes(_login_HTML);
-                        }
-                    }
-                    else
-                    {
-                        b = Encoding.UTF8.GetBytes(_login_HTML);
-                    }
-                }
-            }
-            else if (context.Request.Cookies["ua"] == null || context.Request.Cookies["ua"].Value != _userHash)
-            {
-                b = Encoding.UTF8.GetBytes(_login_HTML);
-            }
-            else
-            {
-                if (context.Request.RawUrl == "/")
-                {
-                    //check for authentication
-                    b = GetWebPage(_musicDirectory);
-                }
-                else
-                {
-                    string filePath = Path.Combine(_musicDirectory, Uri.UnescapeDataString(context.Request.RawUrl.Replace("/", "\\").Remove(0, 1)));
-                    if (context.Request.RawUrl.Contains("/skin/"))
-                    {
-                        b = GetFileBytes(Path.Combine(_skins, Path.GetFileName(context.Request.RawUrl)));
-                    }
-                    else if (context.Request.RawUrl.Contains("/js/"))
-                    {
-                        b = GetFileBytes(Path.Combine(_javaScriptDir, Path.GetFileName(context.Request.RawUrl)));
-                    }
-                    else if (File.Exists(filePath))
-                    {
-                        switch (Path.GetExtension(filePath))
-                        {
-                            case ".mp3": context.Response.ContentType = "audio/mpeg"; b = GetFileBytes(filePath); break;
-                            case ".m4a": context.Response.ContentType = "audio/mp4"; b = GetFileBytes(filePath); break;
-                            case ".flac": context.Response.ContentType = "audio/x-flac"; b = GetFileBytes(filePath); break; //try but doubt it will work
-                            case ".mp4": context.Response.ContentType = "audio/mp4"; b = GetFileBytes(filePath); break;
-                            case ".ogg": context.Response.ContentType = "audio/ogg"; b = GetFileBytes(filePath); break;
-                            case ".wav": context.Response.ContentType = "audio/wav"; b = GetFileBytes(filePath); break;
-                            default: b = NotFound(context); break;
-                        }
-
-                        context.Response.AddHeader("ETag", GetMD5(b).Replace("-", ""));
-                        context.Response.AddHeader("Last-Modified", GetLastModifiedDate(filePath));
-                    }
-                    else if (Directory.Exists(filePath))
-                    {
-                        b = GetWebPage(filePath);
-                    }
-                    else
-                    {
-                        b = NotFound(context);
-                    }
-                }
-            }
-
-            int rangeBegin = 0;
-            int rangeEnd = b.Length;
-            string range = context.Request.Headers["Range"];
-
-            if (range != null)
-            {
-                string[] temp = range.Replace("bytes=", "").Split('-');
-                Int32.TryParse(temp[0], out rangeBegin);
-                Int32.TryParse(temp[1], out rangeEnd);
-                if (rangeEnd == 0)
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.PartialContent;
-                    rangeEnd = b.Length;
-                }
-
-                context.Response.AddHeader("Content-Range", rangeBegin + "-" + (rangeEnd - rangeBegin) + "/" + rangeEnd + 1);
-            }
-
-            context.Response.ContentLength64 = b.Length;
-
-            try
-            {
-                //add in gzip when this is running smoothly
-                context.Response.OutputStream.Write(b, 0, b.Length);
-                context.Response.OutputStream.Close();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
         }
 
         /// <summary>
@@ -330,10 +237,11 @@ namespace HTML5MusicServer
         {
             return "\t{\n\tname:\"" + Path.GetFileName(file) + "\",\n\tmp3:\"" + file.Replace(_musicDirectory, "").Replace("\\", "/") + "\"\n\t},";
         }
-
-        byte[] NotFound(HttpListenerContext context)
+        
+        byte[] NotFound(Response response)
         {
-            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            response.ResponseStatus = Response.STATUS_CODE_NOT_FOUND;
+            //rewire to actually use a file for customization
             XDocument doc = new XDocument(
                 new XElement("html",
                     new XElement("head",

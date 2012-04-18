@@ -73,7 +73,7 @@ namespace HTML5MusicServer
         {
             get { return _cookies; }
         }
-        private Dictionary<string, string> _cookies;
+        private Dictionary<string, string> _cookies = new Dictionary<string,string>();
 
         /// <summary>
         /// Constructor: creates a request object with easy to acess values to the request
@@ -156,7 +156,7 @@ namespace HTML5MusicServer
                     foreach (string s in name_AND_value)
                     {
                         string[] name_OR_value = s.Split('=');
-                        post.Add(HttpUtility.HtmlDecode(name_OR_value[0]), HttpUtility.HtmlDecode(name_OR_value[1]));
+                        //post.Add(HttpUtility.HtmlDecode(name_OR_value[0]), HttpUtility.HtmlDecode(name_OR_value[1]));
                     }
                 }
 

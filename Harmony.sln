@@ -3,12 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HTML5MusicServer", "HTML5MusicServer\HTML5MusicServer.csproj", "{E9E7CFE5-E19F-4A52-B53F-6100F16BC56E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Harmony", "Harmony\Harmony.csproj", "{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B6160968-A051-40C9-A42E-5F5696FF3EC0}"
 	ProjectSection(SolutionItems) = preProject
 		README = README
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Harmony", "Harmony\Harmony.csproj", "{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,16 +30,16 @@ Global
 		{E9E7CFE5-E19F-4A52-B53F-6100F16BC56E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{E9E7CFE5-E19F-4A52-B53F-6100F16BC56E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{E9E7CFE5-E19F-4A52-B53F-6100F16BC56E}.Release|x86.ActiveCfg = Release|Any CPU
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Debug|x86.ActiveCfg = Debug|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Debug|x86.Build.0 = Debug|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Release|Any CPU.ActiveCfg = Release|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Release|Mixed Platforms.Build.0 = Release|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Release|x86.ActiveCfg = Release|x86
-		{0CBA643B-B8A3-4AE6-AAC2-CF40DC70FD7D}.Release|x86.Build.0 = Release|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Debug|x86.ActiveCfg = Debug|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Debug|x86.Build.0 = Debug|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Release|Any CPU.ActiveCfg = Release|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Release|Mixed Platforms.Build.0 = Release|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Release|x86.ActiveCfg = Release|x86
+		{A3C09329-3E37-4D01-9CD3-30AEB218FAF6}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
