@@ -27,6 +27,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Xml.Linq;
+using System.Diagnostics;
 
 namespace HTML5MusicServer
 {
@@ -91,84 +92,89 @@ namespace HTML5MusicServer
 
             while (this._isListening)
             {
-                // Set the event to nonsignaled state.
-                tcpClientConnected.Reset();
-                listener.BeginAcceptTcpClient(new AsyncCallback(HandleRequest), listener);
-                // Wait until a connection is made and processed before continuing.
-                tcpClientConnected.WaitOne();
+                TcpClient client = listener.AcceptTcpClient();
+
+                Thread clientThread = new Thread(new ParameterizedThreadStart(HandleRequest));
+                clientThread.Start(client);
             }
 
             listener.Stop();
         }
 
-        private void HandleRequest(IAsyncResult ar)
+        //Main body of server
+        private void HandleRequest(object client)
         {
-            TcpListener listener = (TcpListener)ar.AsyncState;
-            TcpClient client = listener.EndAcceptTcpClient(ar);
-
-            byte[] rBuffer = new byte[4096];
-            Stream clientStream = client.GetStream();
-            int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
-
-            string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
-            if (!string.IsNullOrEmpty(recieved))
+            try
             {
-                Request request = new Request(recieved);
-                Response response = new Response();
-                byte[] cBuffer = null; //bytes of the files used later to deliver data to the client
-
-                //TODO Clean this up
-                if (request.HttpMethod == Request.GET)
+                using (TcpClient tcpClient = (TcpClient)client)
                 {
-                    string filePath;
-                    if (request.Url == "/")
+
+                    byte[] rBuffer = new byte[4096];
+                    using (Stream clientStream = tcpClient.GetStream())
                     {
-                        cBuffer = GetWebPage(_musicDirectory);
-                    }
-                    //add more else ifs if more file's are added (hopefully no files confict with these names...)
-                    if (request.Url.Contains("/skin/") || request.Url.Contains("/js/") || request.Url.Contains("/pages/") || request.Url.Contains("/images/"))
-                    {
-                        cBuffer = GetFileBytes(Path.Combine(_executingDirectory, request.Url));
-                    }
-                    //not the pretiest but only asign filePath when needed
-                    else if (File.Exists(filePath = Path.Combine(_musicDirectory, Uri.UnescapeDataString(request.Url.Replace("/", "\\").Remove(0, 1)))))
-                    {
-                        switch (Path.GetExtension(filePath))
+                        int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
+
+                        string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
+                        if (!string.IsNullOrEmpty(recieved))
                         {
-                            case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath); break;
-                            case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath); break;
-                            case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath); break;
-                            case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath); break;
-                            case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath); break;
-                            default: cBuffer = NotFound(response); break;
+                            Request request = new Request(recieved);
+                            Response response = new Response();
+                            byte[] cBuffer = null; //bytes of the files used later to deliver data to the client
+
+                            //TODO Clean this up
+                            if (request.HttpMethod == Request.GET)
+                            {
+                                string filePath;
+                                if (request.Url == "/")
+                                {
+                                    cBuffer = GetWebPage(_musicDirectory);
+                                }
+                                //add more else ifs if more file's are added (hopefully no files confict with these names...)
+                                if (request.Url.Contains("/skin/") || request.Url.Contains("/js/") || request.Url.Contains("/pages/") || request.Url.Contains("/images/"))
+                                {
+                                    cBuffer = GetFileBytes(Path.Combine(_executingDirectory, GetServerSidePath(request.Url)));
+                                }
+                                //not the pretiest but only asign filePath when needed
+                                else if (File.Exists(filePath = Path.Combine(_musicDirectory, GetServerSidePath(request.Url))))
+                                {
+                                    switch (Path.GetExtension(filePath))
+                                    {
+                                        case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath); break;
+                                        case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath); break;
+                                        case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath); break;
+                                        case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath); break;
+                                        case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath); break;
+                                        default: cBuffer = NotFound(response); break;
+                                    }
+                                }
+                                else if (Directory.Exists(filePath))
+                                {
+                                    cBuffer = GetWebPage(filePath);
+                                }
+                                else
+                                {
+                                    cBuffer = NotFound(response);
+                                }
+
+                            }
+                            else if (request.HttpMethod == Request.POST)
+                            {
+                                Console.WriteLine("POST RECIEVE");
+                            }
+                            byte[] hBuffer = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n\r\n");
+                            byte[] eBuffer = Encoding.UTF8.GetBytes("\r\n\r\n");
+
+                            clientStream.Write(hBuffer, 0, hBuffer.Length);
+                            clientStream.Write(cBuffer, 0, cBuffer.Length);
+                            clientStream.Write(eBuffer, 0, eBuffer.Length);
                         }
                     }
-                    else if (Directory.Exists(filePath))
-                    {
-                        cBuffer = GetWebPage(filePath);
-                    }
-                    else
-                    {
-                        cBuffer = NotFound(response);
-                    }
-
                 }
-                else if (request.HttpMethod == Request.POST)
-                {
-                    Console.WriteLine("POST RECIEVE");
-                }
-                byte[] hBuffer = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n\r\n");
-                byte[] eBuffer = Encoding.UTF8.GetBytes("\r\n\r\n");
-
-                clientStream.Write(hBuffer, 0, hBuffer.Length);
-                clientStream.Write(cBuffer, 0, cBuffer.Length);
-                clientStream.Write(eBuffer, 0, eBuffer.Length);
-                clientStream.Close();
-                client.Close();
             }
-
-            // Signal the calling thread to continue.
-            tcpClientConnected.Set();
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private byte[] GetSystemResource(Request request, Response response)
@@ -325,6 +331,18 @@ namespace HTML5MusicServer
         {
             DateTime lastWriteTimeUtc = File.GetLastWriteTimeUtc(filePath);
             return string.Format("{0:ddd, dd MMM yyyy HH:mm:ss} GMT", lastWriteTimeUtc);
+        }
+
+        /// <summary>
+        /// Replaces "/", with "\" character to work on windows file system
+        /// Uri unencodes anything that would have been url encoded and removes the first \ so that
+        /// the url can be used with Path.Combine
+        /// </summary>
+        /// <param name="url">the requested url from the server</param>
+        /// <returns>Url back url decoded and with "/" switched to "\"</returns>
+        string GetServerSidePath(string url)
+        {
+            return Uri.UnescapeDataString(url).Replace("/", "\\").Remove(0, 1);
         }
     }
 }
