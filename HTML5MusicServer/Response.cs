@@ -35,7 +35,7 @@ namespace HTML5MusicServer
         public const string STATUS_CODE_BAD_REQUEST = "400 Bad Request";
         public const string STATUS_CODE_NOT_FOUND = "404 Not Found";
         public const string STATUS_CODE_NOT_MODIFIED = "304 Not Modified";
-        public const string STATUS_COSE_NOT_PARTIAL_CONTENT = "206 Partial Content";
+        public const string STATUS_COSE_PARTIAL_CONTENT = "206 Partial Content";
 
         private string _ResponseStatus = STATUS_CODE_OK;
         public string ResponseStatus
@@ -69,7 +69,25 @@ namespace HTML5MusicServer
         {
             set
             {
-                _LastModified = "Last-Modified: " + GetServerFormatedDate(value);
+                _LastModified = "Last-Modified: " + value;
+            }
+        }
+
+        private string _ContentRange;
+        public string ContentRange
+        {
+            set
+            {
+                _ContentRange = "Content-Range: bytes " + value;
+            }
+        }
+
+        private string _ETag;
+        public string ETag
+        {
+            set
+            {
+                _ETag = "ETag:" + value;
             }
         }
 
@@ -82,11 +100,13 @@ namespace HTML5MusicServer
             this.AddHeader(_LastModified, responseHeader);
             this.AddHeader(_ContentType, responseHeader);
             this.AddHeader(_ContentEncoding, responseHeader);
+            this.AddHeader(_ETag, responseHeader);
+            this.AddHeader("Accept-Ranges: bytes", responseHeader);
             this.AddHeader("Content-Length: " + cBuffer.Length, responseHeader);
+            this.AddHeader(_ContentRange, responseHeader);
             responseHeader.Append("\r\n");
 
             byte[] hBuffer = Encoding.UTF8.GetBytes(responseHeader.ToString());
-            byte[] eBuffer = Encoding.UTF8.GetBytes("\r\n\r\n");
 
             clientStream.Write(hBuffer, 0, hBuffer.Length);
             clientStream.Write(cBuffer, 0, cBuffer.Length);
@@ -98,16 +118,6 @@ namespace HTML5MusicServer
             {
                 responseHeader.Append(string.Format("{0}\r\n", header));
             }
-        }
-
-        /// <summary>
-        /// Takes in a string date and formats it to how the
-        /// Web Likes it
-        /// </summary>
-        /// <returns>The formated date string</returns>
-        private string GetServerFormatedDate(string value)
-        {
-            return string.Format("{0:R}", value);
         }
 
         /// <summary>

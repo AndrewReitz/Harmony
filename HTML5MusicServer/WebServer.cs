@@ -101,7 +101,7 @@ namespace HTML5MusicServer
             listener.Stop();
         }
 
-        //Main body of server
+        //Main loop of server
         private void HandleRequest(object client)
         {
             try
@@ -109,9 +109,11 @@ namespace HTML5MusicServer
                 using (TcpClient tcpClient = (TcpClient)client)
                 {
 
-                    byte[] rBuffer = new byte[4096];
+                    byte[] rBuffer = new byte[4096]; //read buffer
                     using (Stream clientStream = tcpClient.GetStream())
                     {
+                        //wrap here to make real http 1.1
+                        //TODO: Cache music files so they don't need to be read into memory again
                         int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
 
                         string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
@@ -132,18 +134,19 @@ namespace HTML5MusicServer
                                 //add more else ifs if more file's are added (hopefully no files confict with these names...)
                                 if (request.Url.Contains("/skin/") || request.Url.Contains("/js/") || request.Url.Contains("/pages/") || request.Url.Contains("/images/"))
                                 {
-                                    cBuffer = GetFileBytes(Path.Combine(_executingDirectory, GetServerSidePath(request.Url)));
+                                    cBuffer = GetFileBytes(Path.Combine(_executingDirectory, GetServerSidePath(request.Url)), request, response);
                                 }
                                 //not the pretiest but only asign filePath when needed
                                 else if (File.Exists(filePath = Path.Combine(_musicDirectory, GetServerSidePath(request.Url))))
                                 {
+                                    //TODO: Move ContentType Handling to in the response class?
                                     switch (Path.GetExtension(filePath))
                                     {
-                                        case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath); break;
-                                        case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath); break;
-                                        case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath); break;
-                                        case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath); break;
-                                        case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath); break;
+                                        case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath, request, response); break;
                                         default: cBuffer = NotFound(response); break;
                                     }
                                 }
@@ -173,47 +176,6 @@ namespace HTML5MusicServer
             }
         }
 
-        private byte[] GetSystemResource(Request request, Response response)
-        {
-            byte[] rBuffer; //return buffer
-            string requestUrl = request.Url.Replace("/", "\\"); //Note all /'s have been replaces to \ for easier lookup on the system
-            string filePath;
-
-            if (requestUrl == "\\")
-            {
-                rBuffer = GetWebPage(_musicDirectory);
-            }
-            //add more else ifs if more file's are added (hopefully no files confict with these names...)
-            if (requestUrl.Contains("\\skin\\") || requestUrl.Contains("\\js\\") || requestUrl.Contains("\\pages\\") || requestUrl.Contains("\\images\\"))
-            {
-                rBuffer = GetFileBytes(Path.Combine(_executingDirectory, requestUrl));
-            }
-            //not the pretiest but only asign filePath when needed
-            else if (File.Exists(filePath = Path.Combine(_musicDirectory, Uri.UnescapeDataString(requestUrl.Remove(0, 1)))))
-            {
-                switch (Path.GetExtension(filePath))
-                {
-                    //TODO: move content types to another class
-                    case ".mp3": response.ContentType = "audio/mpeg"; rBuffer = GetFileBytes(filePath); break;
-                    case ".m4a": response.ContentType = "audio/mp4"; rBuffer = GetFileBytes(filePath); break;
-                    case ".mp4": response.ContentType = "audio/mp4"; rBuffer = GetFileBytes(filePath); break;
-                    case ".ogg": response.ContentType = "audio/ogg"; rBuffer = GetFileBytes(filePath); break;
-                    case ".wav": response.ContentType = "audio/wav"; rBuffer = GetFileBytes(filePath); break;
-                    default: rBuffer = NotFound(response); break;
-                }
-            }
-            else if (Directory.Exists(filePath))
-            {
-                rBuffer = GetWebPage(filePath);
-            }
-            else
-            {
-                rBuffer = NotFound(response);
-            }
-
-            return rBuffer;
-        }
-
         /// <summary>
         /// Adds all the music in the directory to the file and returns it's bytes
         /// </summary>
@@ -230,25 +192,25 @@ namespace HTML5MusicServer
             {
                 switch (Path.GetExtension(file))
                 {
-                    //trying any and all, will put them in as type mp3...
+                    //trying any and all, will put them in as type mp3... //move mime-types to file
                     case ".mp3":
-                        json_music.Append(getMusic(file));
+                        json_music.Append(GetMusic(file));
                         isMusic = true;
                         break;
                     case ".m4a":
-                        json_music.Append(getMusic(file));
+                        json_music.Append(GetMusic(file));
                         isMusic = true;
                         break;
                     case ".mp4":
-                        json_music.Append(getMusic(file));
+                        json_music.Append(GetMusic(file));
                         isMusic = true;
                         break;
                     case ".ogg":
-                        json_music.Append(getMusic(file));
+                        json_music.Append(GetMusic(file));
                         isMusic = true;
                         break;
                     case ".wav":
-                        json_music.Append(getMusic(file));
+                        json_music.Append(GetMusic(file));
                         isMusic = true;
                         break;
                 }
@@ -273,6 +235,7 @@ namespace HTML5MusicServer
             }
             else
             {
+                //TODO: Replace with file
                 returnString = "<!DOCTYPE html><head><title>HTML5 WebPlayer</title><meta http-equiv=\"Content-Type\"" +
                     "content=\"text/html; charset=iso-8859-1\" /></head><body>" + directories.ToString() + "</body></html>";
             }
@@ -281,7 +244,7 @@ namespace HTML5MusicServer
             return Encoding.UTF8.GetBytes(returnString);
         }
 
-        string getMusic(string file)
+        string GetMusic(string file)
         {
             return "\t{\n\tname:\"" + Path.GetFileName(file) + "\",\n\tmp3:\"" + file.Replace(_musicDirectory, "").Replace("\\", "/") + "\"\n\t},";
         }
@@ -301,13 +264,57 @@ namespace HTML5MusicServer
             return Encoding.UTF8.GetBytes("<!DOCTYPE html>" + doc.ToString());
         }
 
-        byte[] GetFileBytes(string filePath)
+        /// <summary>
+        /// Gets the file bytes requested and handles the file properties of the 
+        /// response such as LastModified date and Contenet-Type (TODO)
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="request"></param>
+        /// <param name="response"></param>
+        /// <returns></returns>
+        byte[] GetFileBytes(string filePath, Request request, Response response)
         {
+            response.LastModified = this.GetLastModifiedDate(filePath);
+
             using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 byte[] returnBytes = new byte[fs.Length];
                 fs.Read(returnBytes, 0, (int)fs.Length);
-                return returnBytes;
+
+                //generate etag
+                //TODO: Cache for this, also do only for media types
+                //also set content types HERE!
+                response.ETag = this.GetMD5(returnBytes);
+
+                if (request.Headers.ContainsKey("Range"))
+                {
+                    response.ResponseStatus = Response.STATUS_COSE_PARTIAL_CONTENT;
+                    string rangeHeader;
+                    if ((rangeHeader = request.Headers["Range"]) != "bytes=0-")
+                    {
+                        string byteLengh = rangeHeader.Replace("bytes=", "");
+                        response.ContentRange = string.Format("{0}/{1}", byteLengh, returnBytes.Length - 1);
+                        string[] byteRanges = byteLengh.Split('-');
+                        int begin = Int32.Parse(byteRanges[0]);
+                        int end = Int32.Parse(byteRanges[1]);
+                        int size = end - begin;
+                        byte[] returnBytesSub = new byte[size];
+                        for (int i = 0; i < size; i++)
+                        {
+                            returnBytesSub[i] = returnBytes[begin + 1];
+                        }
+                        return returnBytesSub;
+                    }
+                    else
+                    {
+                        response.ContentRange = string.Format("0-{0}/{1}", returnBytes.Length - 1, returnBytes.Length);
+                        return returnBytes;
+                    }
+                }
+                else
+                {
+                    return returnBytes;
+                }
             }
         }
 
