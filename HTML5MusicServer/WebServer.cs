@@ -161,12 +161,8 @@ namespace HTML5MusicServer
                             {
                                 Console.WriteLine("POST RECIEVE");
                             }
-                            byte[] hBuffer = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n\r\n");
-                            byte[] eBuffer = Encoding.UTF8.GetBytes("\r\n\r\n");
 
-                            clientStream.Write(hBuffer, 0, hBuffer.Length);
-                            clientStream.Write(cBuffer, 0, cBuffer.Length);
-                            clientStream.Write(eBuffer, 0, eBuffer.Length);
+                            response.SendResponse(clientStream, cBuffer);
                         }
                     }
                 }
@@ -290,6 +286,7 @@ namespace HTML5MusicServer
             return "\t{\n\tname:\"" + Path.GetFileName(file) + "\",\n\tmp3:\"" + file.Replace(_musicDirectory, "").Replace("\\", "/") + "\"\n\t},";
         }
 
+        //TODO: Replace with file
         byte[] NotFound(Response response)
         {
             response.ResponseStatus = Response.STATUS_CODE_NOT_FOUND;

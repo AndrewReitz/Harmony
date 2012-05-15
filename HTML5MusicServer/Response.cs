@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace HTML5MusicServer
 {
@@ -41,7 +42,7 @@ namespace HTML5MusicServer
         {
             set
             {
-                _ResponseStatus = HTTP_PROTOCAL + value;
+                _ResponseStatus = value;
             }
         }
 
@@ -68,8 +69,54 @@ namespace HTML5MusicServer
         {
             set
             {
-                _LastModified = "Last-Modified: " + string.Format("{0:R}", DateTime.Now);
+                _LastModified = "Last-Modified: " + GetServerFormatedDate(value);
             }
+        }
+
+        public void SendResponse(Stream clientStream, byte[] cBuffer)
+        {
+            StringBuilder responseHeader = new StringBuilder();
+            responseHeader.AppendLine(string.Format("{0} {1}", HTTP_PROTOCAL, _ResponseStatus)); // HTTP/1.1 200 OK
+            this.AddHeader("Date: " + GetServerFormatedDate(), responseHeader);
+            this.AddHeader("Server: " + SERVER, responseHeader);
+            this.AddHeader(_LastModified, responseHeader);
+            this.AddHeader(_ContentType, responseHeader);
+            this.AddHeader(_ContentEncoding, responseHeader);
+            this.AddHeader("Content-Length: " + cBuffer.Length, responseHeader);
+            responseHeader.Append("\r\n");
+
+            byte[] hBuffer = Encoding.UTF8.GetBytes(responseHeader.ToString());
+            byte[] eBuffer = Encoding.UTF8.GetBytes("\r\n\r\n");
+
+            clientStream.Write(hBuffer, 0, hBuffer.Length);
+            clientStream.Write(cBuffer, 0, cBuffer.Length);
+        }
+
+        private void AddHeader(string header, StringBuilder responseHeader)
+        {
+            if (!string.IsNullOrEmpty(header) && !string.IsNullOrWhiteSpace(header))
+            {
+                responseHeader.Append(string.Format("{0}\r\n", header));
+            }
+        }
+
+        /// <summary>
+        /// Takes in a string date and formats it to how the
+        /// Web Likes it
+        /// </summary>
+        /// <returns>The formated date string</returns>
+        private string GetServerFormatedDate(string value)
+        {
+            return string.Format("{0:R}", value);
+        }
+
+        /// <summary>
+        /// Gets the current date and formats it in the way web browsers like it
+        /// </summary>
+        /// <returns>The formated date string</returns>
+        private string GetServerFormatedDate()
+        {
+            return string.Format("{0:R}", DateTime.Now);
         }
     }
 }
