@@ -87,23 +87,26 @@ namespace HTML5MusicServer
         {
             set
             {
-                _ETag = "ETag:" + value;
+                _ETag = "ETag: \"" + value + "\"";
             }
         }
 
         public void SendResponse(Stream clientStream, byte[] cBuffer)
         {
+            //these are modeled after jPlayers server headers, some may be unnessisary
             StringBuilder responseHeader = new StringBuilder();
             responseHeader.AppendLine(string.Format("{0} {1}", HTTP_PROTOCAL, _ResponseStatus)); // HTTP/1.1 200 OK
             this.AddHeader("Date: " + GetServerFormatedDate(), responseHeader);
             this.AddHeader("Server: " + SERVER, responseHeader);
             this.AddHeader(_LastModified, responseHeader);
-            this.AddHeader(_ContentType, responseHeader);
             this.AddHeader(_ContentEncoding, responseHeader);
             this.AddHeader(_ETag, responseHeader);
             this.AddHeader("Accept-Ranges: bytes", responseHeader);
             this.AddHeader("Content-Length: " + cBuffer.Length, responseHeader);
             this.AddHeader(_ContentRange, responseHeader);
+            this.AddHeader("Keep-Alive: timeout=15, max=100", responseHeader);
+            this.AddHeader("Connection: Keep-Alive", responseHeader);
+            this.AddHeader(_ContentType, responseHeader);
             responseHeader.Append("\r\n");
 
             byte[] hBuffer = Encoding.UTF8.GetBytes(responseHeader.ToString());

@@ -37,8 +37,6 @@ namespace HTML5MusicServer
         TcpListener _listener;
         readonly string _executingDirectory = Path.GetDirectoryName(Assembly.GetAssembly(typeof(WebServer)).Location);
         readonly string _musicDirectory;
-        //readonly string _javaScriptDir;
-        //readonly string _skins;
         //readonly string _login_HTML;
         readonly string _audioPlayer_HTML;
         readonly string _username;
@@ -58,8 +56,6 @@ namespace HTML5MusicServer
         {
             _listener = new TcpListener(IPAddress.Any, port);
             _musicDirectory = MusicDirectory;
-            //_javaScriptDir = Path.Combine(_executingDirectory, "js"); //GetCurrentDirectory needs to be changed
-            //_skins = Path.Combine(_executingDirectory, "skin");
             _audioPlayer_HTML = File.ReadAllText(Path.Combine(_executingDirectory, "audio_player.html"));
             //_login_HTML = File.ReadAllText(Path.Combine(_executingDirectory, "login.html")); CURRENTLY NO LOGINPAGE
             _username = username;
@@ -71,10 +67,14 @@ namespace HTML5MusicServer
         /// </summary>
         public void Start()
         {
-            _isListening = true;
+            //if it's already listening don't spawn another thread
+            if (!_isListening)
+            {
+                _isListening = true;
 
-            Thread t = new Thread(new ParameterizedThreadStart(RunServer));
-            t.Start(_listener);
+                Thread t = new Thread(new ParameterizedThreadStart(RunServer));
+                t.Start(_listener);
+            }
         }
 
         /// <summary>
@@ -110,64 +110,68 @@ namespace HTML5MusicServer
                 {
 
                     byte[] rBuffer = new byte[4096]; //read buffer
-                    using (Stream clientStream = tcpClient.GetStream())
+                    using (var clientStream = tcpClient.GetStream())
                     {
                         //wrap here to make real http 1.1
                         //TODO: Cache music files so they don't need to be read into memory again
-                        int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
-
-                        string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
-                        if (!string.IsNullOrEmpty(recieved))
+                        while (tcpClient.Connected)
                         {
-                            Request request = new Request(recieved);
-                            Response response = new Response();
-                            byte[] cBuffer = null; //bytes of the files used later to deliver data to the client
 
-                            //TODO Clean this up
-                            if (request.HttpMethod == Request.GET)
+                            int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
+
+                            string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
+                            if (!string.IsNullOrEmpty(recieved))
                             {
-                                string filePath;
-                                if (request.Url == "/")
+                                Request request = new Request(recieved);
+                                Response response = new Response();
+                                byte[] cBuffer = null; //bytes of the files used later to deliver data to the client
+
+                                //TODO Clean this up
+                                if (request.HttpMethod == Request.GET)
                                 {
-                                    cBuffer = GetWebPage(_musicDirectory);
-                                }
-                                //add more else ifs if more file's are added (hopefully no files confict with these names...)
-                                if (request.Url.Contains("/skin/") || request.Url.Contains("/js/") || request.Url.Contains("/pages/") || request.Url.Contains("/images/"))
-                                {
-                                    cBuffer = GetFileBytes(Path.Combine(_executingDirectory, GetServerSidePath(request.Url)), request, response);
-                                }
-                                //not the pretiest but only asign filePath when needed
-                                else if (File.Exists(filePath = Path.Combine(_musicDirectory, GetServerSidePath(request.Url))))
-                                {
-                                    //TODO: Move ContentType Handling to in the response class?
-                                    switch (Path.GetExtension(filePath))
+                                    string filePath;
+                                    if (request.Url == "/")
                                     {
-                                        case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                        case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                        case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                        case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                        case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                        default: cBuffer = NotFound(response); break;
+                                        cBuffer = GetWebPage(_musicDirectory, response);
                                     }
+                                    //add more else ifs if more file's are added (hopefully no files confict with these names...)
+                                    if (request.Url.Contains("/skin/") || request.Url.Contains("/js/") || request.Url.Contains("/pages/") || request.Url.Contains("/images/"))
+                                    {
+                                        cBuffer = GetFileBytes(Path.Combine(_executingDirectory, GetServerSidePath(request.Url)), request, response);
+                                    }
+                                    //not the pretiest but only asign filePath when needed
+                                    else if (File.Exists(filePath = Path.Combine(_musicDirectory, GetServerSidePath(request.Url))))
+                                    {
+                                        //TODO: Move ContentType Handling to in the response class?
+                                        switch (Path.GetExtension(filePath))
+                                        {
+                                            case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                            case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                            case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                            case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                            case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                            default: cBuffer = NotFound(response); break;
+                                        }
+                                    }
+                                    else if (Directory.Exists(filePath))
+                                    {
+                                        cBuffer = GetWebPage(filePath, response);
+                                    }
+                                    else
+                                    {
+                                        cBuffer = NotFound(response);
+                                    }
+
                                 }
-                                else if (Directory.Exists(filePath))
+                                else if (request.HttpMethod == Request.POST)
                                 {
-                                    cBuffer = GetWebPage(filePath);
-                                }
-                                else
-                                {
-                                    cBuffer = NotFound(response);
+                                    Console.WriteLine("POST RECIEVE");
                                 }
 
+                                response.SendResponse(clientStream, cBuffer);
                             }
-                            else if (request.HttpMethod == Request.POST)
-                            {
-                                Console.WriteLine("POST RECIEVE");
-                            }
-
-                            response.SendResponse(clientStream, cBuffer);
-                        }
-                    }
+                        }//end while loop
+                    } //end client stream
                 }
             }
             catch (Exception e)
@@ -181,7 +185,7 @@ namespace HTML5MusicServer
         /// </summary>
         /// <param name="directory">directory to get all the directory/music files</param>
         /// <returns>byte array of the generated webpage</returns>
-        byte[] GetWebPage(string directory)
+        byte[] GetWebPage(string directory, Response response)
         {
             bool isMusic = false;
 
@@ -240,6 +244,7 @@ namespace HTML5MusicServer
                     "content=\"text/html; charset=iso-8859-1\" /></head><body>" + directories.ToString() + "</body></html>";
             }
 
+            response.ContentType = "text/html";
 
             return Encoding.UTF8.GetBytes(returnString);
         }
