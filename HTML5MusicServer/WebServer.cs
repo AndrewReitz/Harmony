@@ -82,7 +82,11 @@ namespace HTML5MusicServer
         /// </summary>
         public void Stop()
         {
-            _isListening = false;
+            if (_isListening)
+            {
+                _isListening = false;
+                _listener.Stop();
+            }
         }
 
         private void RunServer(object tcpListner)
@@ -92,13 +96,19 @@ namespace HTML5MusicServer
 
             while (this._isListening)
             {
-                TcpClient client = listener.AcceptTcpClient();
+                TcpClient client = null;
+                try
+                {
+                    client = listener.AcceptTcpClient();
+                }
+                catch { /* listener was interupted by stop being called */ }
 
-                Thread clientThread = new Thread(new ParameterizedThreadStart(HandleRequest));
-                clientThread.Start(client);
+                if (client != null)
+                {
+                    Thread clientThread = new Thread(new ParameterizedThreadStart(HandleRequest));
+                    clientThread.Start(client);
+                }
             }
-
-            listener.Stop();
         }
 
         //Main loop of server
