@@ -17,3 +17,9 @@ Soon to come
 Author: Andrew Reitz
 
 Status: In a working state but still needs some clean up/optimizations before new features will be added
+
+The reason I created Harmony was I couldn't find a solution that would let me literally play anywhere.  I was tired of having something
+that would play on desktop browsers but not on mobile.  I was tired of having something that would play on both but I would have to install something.
+So when I found jPlayer that would let you play music in web browsers I knew exactly what I wanted to create, a server that I could easily
+setup with a few clicks and could use whereever I have an internet connection.  Right now it works best with Chrome/Mobile Opera, but hopefully
+more browsers will start supporting more media types.

@@ -108,15 +108,15 @@ namespace HTML5MusicServer
             {
                 using (TcpClient tcpClient = (TcpClient)client)
                 {
-
+                    tcpClient.ReceiveTimeout = 15;
+                    tcpClient.SendBufferSize = 4096; 
                     byte[] rBuffer = new byte[4096]; //read buffer
                     using (var clientStream = tcpClient.GetStream())
                     {
-                        //wrap here to make real http 1.1
                         //TODO: Cache music files so they don't need to be read into memory again
+                        //This will pretty much always be true but the Read function will throw an interupt if > 15ms
                         while (tcpClient.Connected)
                         {
-
                             int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
 
                             string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
@@ -173,6 +173,11 @@ namespace HTML5MusicServer
                         }//end while loop
                     } //end client stream
                 }
+            }
+            catch (IOException e)
+            {
+                //the client stream blocked to long and this was used to interupt it
+                Console.WriteLine(e.Message);
             }
             catch (Exception e)
             {
