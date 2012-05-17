@@ -24,16 +24,24 @@ namespace Harmony
             _folderBrowserDialog.Description = "Select your music directory";
             _folderBrowserDialog.ShowNewFolderButton = false;
             _folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer;
+
+            LoadSettings();
         }
 
         private void buttonBrowseDirectory_Click(object sender, EventArgs e)
         {
-            //no need to error check, if not a valid path it defualts to MyComputer
-            _folderBrowserDialog.SelectedPath = textBoxMusicDirectory.Text;
+            if (!string.IsNullOrEmpty(this.textBoxMusicDirectory.Text))
+            {
+                _folderBrowserDialog.SelectedPath = this.textBoxMusicDirectory.Text;
+            }
+            else
+            {
+                _folderBrowserDialog.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+            }
 
             if (_folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
-                textBoxMusicDirectory.Text = _folderBrowserDialog.SelectedPath;
+                this.textBoxMusicDirectory.Text = _folderBrowserDialog.SelectedPath;
             }
         }
 
@@ -41,8 +49,8 @@ namespace Harmony
         {
             StringBuilder errorMessage = new StringBuilder();
 
-            string musicDir = textBoxMusicDirectory.Text;
-            string portString = textBoxPort.Text;
+            string musicDir = this.textBoxMusicDirectory.Text;
+            string portString = this.textBoxPort.Text;
 
             //validate directory
             if (string.IsNullOrEmpty(musicDir))
@@ -70,7 +78,18 @@ namespace Harmony
             {
                 //TODO: move into one call and then can get rid of constructor every time called
                 _webServer = new WebServer(musicDir, port, "test", "test");
-                _webServer.Start();
+                try
+                {
+                    _webServer.Start();
+                }
+                catch (Exception ex)
+                {
+#if DEBUG
+                    MessageBox.Show(ex.Message);
+#else
+                    MessageBox.Show("Error trying to start server, do you have another server already running?", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+#endif
+                }
 
             }
         }
@@ -78,6 +97,25 @@ namespace Harmony
         private void buttonStop_Click(object sender, EventArgs e)
         {
             _webServer.Stop();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _webServer.Stop();
+            SaveSettings();
+        }
+
+        private void LoadSettings()
+        {
+            this.textBoxMusicDirectory.Text = Properties.Settings.Default.musicPath;
+            this.textBoxPort.Text = Properties.Settings.Default.port;
+        }
+
+        private void SaveSettings()
+        {
+            Properties.Settings.Default.musicPath = this.textBoxMusicDirectory.Text;
+            Properties.Settings.Default.port = this.textBoxPort.Text;
+            Properties.Settings.Default.Save();
         }
     }
 }
