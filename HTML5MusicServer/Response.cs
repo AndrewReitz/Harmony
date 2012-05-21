@@ -115,6 +115,13 @@ namespace HTML5MusicServer
             clientStream.Write(cBuffer, 0, cBuffer.Length);
         }
 
+        /// <summary>
+        /// Used to add headers to the response can pass in any of the values 
+        /// that were defined at the begining of this class
+        /// and it will not add them if they have not been set.
+        /// </summary>
+        /// <param name="header">The string you want to add to the headers</param>
+        /// <param name="responseHeader">StringBuilder that contains all the headers</param>
         private void AddHeader(string header, StringBuilder responseHeader)
         {
             if (!string.IsNullOrEmpty(header) && !string.IsNullOrWhiteSpace(header))
@@ -124,12 +131,12 @@ namespace HTML5MusicServer
         }
 
         /// <summary>
-        /// Gets the current date and formats it in the way web browsers like it
+        /// Gets the current date and time of the server
         /// </summary>
-        /// <returns>The formated date string</returns>
+        /// <returns>GMT time string formated according to RFC 2822</returns>
         private string GetServerFormatedDate()
         {
-            return string.Format("{0:R}", DateTime.Now);
+            return string.Format("{0:R}", DateTime.UtcNow);
         }
     }
 }
