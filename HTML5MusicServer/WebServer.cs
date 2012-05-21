@@ -119,67 +119,64 @@ namespace HTML5MusicServer
                 using (TcpClient tcpClient = (TcpClient)client)
                 {
                     tcpClient.ReceiveTimeout = 15;
-                    tcpClient.SendBufferSize = 4096; 
-                    byte[] rBuffer = new byte[4096]; //read buffer
+                    byte[] rBuffer = new byte[tcpClient.ReceiveBufferSize]; //read buffer
                     using (var clientStream = tcpClient.GetStream())
                     {
                         //TODO: Cache music files so they don't need to be read into memory again
                         //This will pretty much always be true but the Read function will throw an interupt if > 15ms
-                        while (tcpClient.Connected)
+                        int bytesRecieved = 0;
+                        while ((bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length)) > 0)
                         {
-                            int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
+                            //int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
 
                             string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
-                            if (!string.IsNullOrEmpty(recieved))
+                            Request request = new Request(recieved);
+                            Response response = new Response();
+                            byte[] cBuffer = null; //bytes of the files used later to deliver data to the client
+
+                            //TODO Clean this up
+                            if (request.HttpMethod == Request.GET)
                             {
-                                Request request = new Request(recieved);
-                                Response response = new Response();
-                                byte[] cBuffer = null; //bytes of the files used later to deliver data to the client
-
-                                //TODO Clean this up
-                                if (request.HttpMethod == Request.GET)
+                                string filePath;
+                                if (request.Url == "/")
                                 {
-                                    string filePath;
-                                    if (request.Url == "/")
-                                    {
-                                        cBuffer = GetWebPage(_musicDirectory, response);
-                                    }
-                                    //add more else ifs if more file's are added (hopefully no files confict with these names...)
-                                    if (request.Url.Contains("/skin/") || request.Url.Contains("/js/") || request.Url.Contains("/pages/") || request.Url.Contains("/images/"))
-                                    {
-                                        cBuffer = GetFileBytes(Path.Combine(_executingDirectory, GetServerSidePath(request.Url)), request, response);
-                                    }
-                                    //not the pretiest but only asign filePath when needed
-                                    else if (File.Exists(filePath = Path.Combine(_musicDirectory, GetServerSidePath(request.Url))))
-                                    {
-                                        //TODO: Move ContentType Handling to in the response class?
-                                        switch (Path.GetExtension(filePath))
-                                        {
-                                            case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                            case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                            case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                            case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                            case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath, request, response); break;
-                                            default: cBuffer = NotFound(response); break;
-                                        }
-                                    }
-                                    else if (Directory.Exists(filePath))
-                                    {
-                                        cBuffer = GetWebPage(filePath, response);
-                                    }
-                                    else
-                                    {
-                                        cBuffer = NotFound(response);
-                                    }
-
+                                    cBuffer = GetWebPage(_musicDirectory, response);
                                 }
-                                else if (request.HttpMethod == Request.POST)
+                                //add more else ifs if more file's are added (hopefully no files confict with these names...)
+                                if (request.Url.Contains("/skin/") || request.Url.Contains("/js/") || request.Url.Contains("/pages/") || request.Url.Contains("/images/"))
                                 {
-                                    Console.WriteLine("POST RECIEVE");
+                                    cBuffer = GetFileBytes(Path.Combine(_executingDirectory, GetServerSidePath(request.Url)), request, response);
+                                }
+                                //not the pretiest but only asign filePath when needed
+                                else if (File.Exists(filePath = Path.Combine(_musicDirectory, GetServerSidePath(request.Url))))
+                                {
+                                    //TODO: Move ContentType Handling to in the response class?
+                                    switch (Path.GetExtension(filePath))
+                                    {
+                                        case ".mp3": response.ContentType = "audio/mpeg"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        case ".m4a": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        case ".mp4": response.ContentType = "audio/mp4"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        case ".ogg": response.ContentType = "audio/ogg"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        case ".wav": response.ContentType = "audio/wav"; cBuffer = GetFileBytes(filePath, request, response); break;
+                                        default: cBuffer = NotFound(response); break;
+                                    }
+                                }
+                                else if (Directory.Exists(filePath))
+                                {
+                                    cBuffer = GetWebPage(filePath, response);
+                                }
+                                else
+                                {
+                                    cBuffer = NotFound(response);
                                 }
 
-                                response.SendResponse(clientStream, cBuffer);
                             }
+                            else if (request.HttpMethod == Request.POST)
+                            {
+                                Console.WriteLine("POST RECIEVE");
+                            }
+
+                            response.SendResponse(clientStream, cBuffer);
                         }//end while loop
                     } //end client stream
                 }
