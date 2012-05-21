@@ -54,6 +54,7 @@ namespace HTML5MusicServer
 
         public WebServer(string MusicDirectory, int port, string username, string password)
         {
+            //TODO: Check to make sure all the needed files exist, if not throw exception
             _listener = new TcpListener(IPAddress.Any, port);
             _musicDirectory = MusicDirectory;
             _audioPlayer_HTML = File.ReadAllText(Path.Combine(_executingDirectory, "audio_player.html"));
@@ -123,12 +124,10 @@ namespace HTML5MusicServer
                     using (var clientStream = tcpClient.GetStream())
                     {
                         //TODO: Cache music files so they don't need to be read into memory again
-                        //This will pretty much always be true but the Read function will throw an interupt if > 15ms
-                        int bytesRecieved = 0;
+
+                        int bytesRecieved = 0; //Read function will throw an exception if takes longer than 15ms
                         while ((bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length)) > 0)
                         {
-                            //int bytesRecieved = clientStream.Read(rBuffer, 0, rBuffer.Length);
-
                             string recieved = System.Text.Encoding.UTF8.GetString(rBuffer, 0, bytesRecieved);
                             Request request = new Request(recieved);
                             Response response = new Response();
@@ -173,6 +172,7 @@ namespace HTML5MusicServer
                             }
                             else if (request.HttpMethod == Request.POST)
                             {
+                                //TODO: Handle Posts for logins
                                 Console.WriteLine("POST RECIEVE");
                             }
 
@@ -251,7 +251,7 @@ namespace HTML5MusicServer
             }
             else
             {
-                //TODO: Replace with file
+                //TODO: Replace with file (possibly make some sort of simple templating system
                 returnString = "<!DOCTYPE html><head><title>HTML5 WebPlayer</title><meta http-equiv=\"Content-Type\"" +
                     "content=\"text/html; charset=iso-8859-1\" /></head><body>" + directories.ToString() + "</body></html>";
             }
@@ -270,6 +270,8 @@ namespace HTML5MusicServer
         byte[] NotFound(Response response)
         {
             response.ResponseStatus = Response.STATUS_CODE_NOT_FOUND;
+            response.ContentType = "text/html";
+
             //rewire to actually use a file for customization
             XDocument doc = new XDocument(
                 new XElement("html",
@@ -335,6 +337,11 @@ namespace HTML5MusicServer
             }
         }
 
+        /// <summary>
+        /// Takes in a byte array and returns the MD5
+        /// </summary>
+        /// <param name="bytes">Array of bytes</param>
+        /// <returns>Hash as a string</returns>
         string GetMD5(byte[] bytes)
         {
             MD5 md5 = MD5.Create();
@@ -348,6 +355,11 @@ namespace HTML5MusicServer
             return md5Sb.ToString();
         }
 
+        /// <summary>
+        /// Returns the last time a file was modified in UTC format
+        /// </summary>
+        /// <param name="filePath">Path to the file</param>
+        /// <returns>GMT time string formated according to RFC 2822</returns>
         string GetLastModifiedDate(string filePath)
         {
             DateTime lastWriteTimeUtc = File.GetLastWriteTimeUtc(filePath);
