@@ -123,6 +123,8 @@
             this.Controls.Add(this.buttonStart);
             this.Controls.Add(this.buttonStop);
             this.Controls.Add(this.groupBox1);
+            this.MaximumSize = new System.Drawing.Size(487, 181);
+            this.MinimumSize = new System.Drawing.Size(487, 181);
             this.Name = "MainForm";
             this.Text = "Harmony HTML5 Media Server";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
